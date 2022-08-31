@@ -10,6 +10,7 @@ const cors = require('cors');
 
 const auth = require('./src/auth/oauth2');
 const lti = require('./src/lti/canvas');
+const canvasApi = require('./src/api/canvas');
 
 const port = process.env.PORT || 3000;
 const cookieMaxAge = 3600000 * 72; // 72h
@@ -77,10 +78,14 @@ app.get('/', async (req, res) => {
     else {
         console.log("Success, send JSON response to client!");
 
+        let courseGroups = await canvasApi.getCourseGroups(req.session.lti.custom_canvas_course_id, req);
+        console.log(courseGroups);
+        
         return res.send({
             status: 'up',
             id: req.session.id,
             version: pkg.version,
+            groups: courseGroups,
             session: req.session
         });
     }
