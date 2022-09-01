@@ -76,11 +76,11 @@ async function checkToken(req, res) {
     
             try {
                 const refreshParams = {};
-                accessToken = await accessToken.refresh(refreshParams);
-                req.session.accessToken = accessToken;
+                let newAccessToken = await accessToken.refresh(refreshParams);
+                req.session.accessToken = newAccessToken;
                 console.log("Access token refreshed.");
                 return new TokenResult(true);
-            } 
+            }
             catch (error) {
               console.error('Error refreshing access token: ', error.message);
               return new TokenResult(false, "Error refreshing access token");
@@ -98,8 +98,8 @@ async function providerRefreshToken(req) {
 
     try {
         const refreshParams = {};
-        accessToken = await accessToken.refresh(refreshParams);
-        req.session.accessToken = accessToken;
+        newAccessToken = await accessToken.refresh(refreshParams);
+        req.session.accessToken = newAccessToken;
         console.log("Access token refreshed.");
         return new TokenResult(true);
     } 
