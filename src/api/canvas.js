@@ -8,7 +8,7 @@ const oauth = require('../auth/oauth2');
 const API_PER_PAGE = 25;
 
 async function getCourseGroups(courseId, request) {
-    let thisApiPath = "https://chalmers.instructure.com/api/v1" + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;;
+    let thisApiPath = "https://chalmers.instructure.com/api/v1" + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
     let apiData = [];
     let returnedApiData = [];
     let errorCount = 0;
@@ -27,7 +27,7 @@ async function getCourseGroups(courseId, request) {
           const data = response.data;
 
           console.log(data);
-          
+
           apiData.push(data);
     
           if (response.headers["link"]) {

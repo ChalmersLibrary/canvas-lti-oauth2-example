@@ -77,7 +77,9 @@ async function checkToken(req, res) {
             try {
                 const refreshParams = {};
                 accessToken = await accessToken.refresh(refreshParams);
+                req.session.accessToken = accessToken;
                 console.log("Access token refreshed.");
+                return new TokenResult(true);
             } 
             catch (error) {
               console.error('Error refreshing access token: ', error.message);
@@ -89,9 +91,26 @@ async function checkToken(req, res) {
             return new TokenResult(true);
         }
     }
-};
+}
+
+async function providerRefreshToken(req) {
+    let accessToken = client.createToken(req.session.accessToken);
+
+    try {
+        const refreshParams = {};
+        accessToken = await accessToken.refresh(refreshParams);
+        req.session.accessToken = accessToken;
+        console.log("Access token refreshed.");
+        return new TokenResult(true);
+    } 
+    catch (error) {
+      console.error('Error refreshing access token: ', error.message);
+      return new TokenResult(false, "Error refreshing access token");
+    }
+}
 
 module.exports = {
     createApplication,
-    checkToken
+    checkToken,
+    providerRefreshToken
 }
