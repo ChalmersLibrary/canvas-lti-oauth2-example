@@ -67,7 +67,6 @@ app.get('/', async (req, res) => {
     console.log("Checking access token...");
 
     const token = await auth.checkToken(req, res);
-    console.log("Token: " + JSON.stringify(token));
     console.log(token);
 
     if (token.success === false) {
@@ -78,15 +77,18 @@ app.get('/', async (req, res) => {
     else {
         console.log("Success, send JSON response to client!");
 
-        let courseGroups = await canvasApi.getCourseGroups(req.session.lti.custom_canvas_course_id, req);
-        console.log(courseGroups);
-        
-        return res.send({
-            status: 'up',
-            id: req.session.id,
-            version: pkg.version,
-            groups: courseGroups,
-            session: req.session
+        await canvasApi.getCourseGroups(req.session.lti.custom_canvas_course_id, req).then((courseGroups) => {
+            return res.send({
+                status: 'up',
+                id: req.session.id,
+                version: pkg.version,
+                groups: courseGroups,
+                session: req.session
+            });    
+        }).catch((error) => {
+            console.error(error);
+
+            return res.error(error);
         });
     }
 });

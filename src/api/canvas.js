@@ -9,74 +9,85 @@ const API_PER_PAGE = 25;
 
 async function getCourseGroups(courseId, request) {
     let thisApiPath = "https://chalmers.instructure.com/api/v1" + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
-    let apiData = [];
-    let returnedApiData = [];
+    let apiData = new Array();
+    let returnedApiData = new Array();
     let errorCount = 0;
 
     while (errorCount < 4 && thisApiPath && request.session.accessToken.access_token) {
         console.log("[API] GET " + thisApiPath);
     
         try {
-          const response = await axios.get(thisApiPath, {
-            headers: {
-              "User-Agent": "Chalmers/Azure/Request",
-              "Authorization": request.session.accessToken.token_type + " " + request.session.accessToken.access_token
+            const response = await axios.get(thisApiPath, {
+                headers: {
+                "User-Agent": "Chalmers/Azure/Request",
+                "Authorization": request.session.accessToken.token_type + " " + request.session.accessToken.access_token
+                }
+            });
+
+            apiData.push(response.data);
+
+            if (response.headers["X-Request-Cost"]) {
+                console.log("Request cost: " + response.headers["X-Request-Cost"]);
             }
-          });
-          
-          const data = response.data;
 
-          console.log(data);
-
-          apiData.push(data);
-    
-          if (response.headers["link"]) {
-            var link = LinkHeader.parse(response.headers["link"]);
-    
-            if (link.has("rel", "next")) {
-              thisApiPath = link.get("rel", "next")[0].uri;
+            if (response.headers["link"]) {
+                let link = LinkHeader.parse(response.headers["link"]);
+        
+                if (link.has("rel", "next")) {
+                    thisApiPath = link.get("rel", "next")[0].uri;
+                }
+                else {
+                    thisApiPath = false;
+                }
             }
             else {
-              thisApiPath = false;
+                thisApiPath = false;
             }
-          }
-          else {
-            thisApiPath = false;
-          }  
         }
         catch (error) {
-          errorCount++;
-          console.error("[API] Error: " + error);
-    
-          if (error.response.status == 401 && error.response.headers['www-authenticate']) { // refresh token, then try again
-            await oauth.providerRefreshToken(request);
-          }
-          else if (error.response.status == 401 && !error.response.headers['www-authenticate']) { // no access, redirect to auth
-            console.error("[API] Not authorized in Canvas for use of this API endpoint.");
-            console.error(JSON.stringify(error));
-            return(error);
-          }
-          else {
-            console.error(error);
-            return(error);  
-          }
-        }
-      }
-
-      
-    // Compile new object from all pages.
-    // TODO: Include errorCount here in some way for GUI.
-    for (const page in apiData) {
-        for (const record in page) {
-              returnedApiData.push(record);
+            errorCount++;
+            console.error("[API] Error: " + error);
+        
+            if (error.response.status == 401 && error.response.headers['www-authenticate']) { // refresh token, then try again
+                await oauth.providerRefreshToken(request);
+            }
+            else if (error.response.status == 401 && !error.response.headers['www-authenticate']) { // no access, redirect to auth
+                console.error("[API] Not authorized in Canvas for use of this API endpoint.");
+                console.error(JSON.stringify(error));
+                return(error);
+            }
+            else {
+                console.error(error);
+                return(error);  
+            }
         }
     }
 
-    console.log("Returning data from API...");
-    console.log(returnedApiData);
+    /* console.log("apiData:" + JSON.stringify(apiData));
+    console.log("apiData.typeof: " + typeof(apiData)); */
 
-    return returnedApiData;   
-}
+    console.log(typeof(apiData));
+
+    // Compile new object from all pages.
+    // TODO: Include errorCount here in some way for GUI.
+    apiData.forEach((page) => {
+        page.forEach((record) => {
+            returnedApiData.push({
+                id: record.id, 
+                name: record.name, 
+                group_category_id: 
+                record.group_category_id, 
+                created_at: record.created_at, 
+                members_count: record.members_count
+            });
+            // returnedApiData.push(record);
+        });
+    });
+
+    return new Promise((resolve) => {
+        resolve(returnedApiData);
+    })
+};
 
 async function getCourseDetails(courseId) {
     console.log("Course details for " + courseId);
