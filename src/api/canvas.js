@@ -6,21 +6,22 @@ const axios = require('axios');
 const oauth = require('../auth/oauth2');
 
 const API_PER_PAGE = 25;
+const API_PATH = "/api/v1";
 
 async function getCourseGroups(courseId, request) {
-    let thisApiPath = "https://chalmers.instructure.com/api/v1" + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
+    let thisApiPath = (process.env.API_HOST ? process.env.API_HOST : process.env.AUTH_HOST) + API_PATH + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
     let apiData = new Array();
     let returnedApiData = new Array();
     let errorCount = 0;
 
     while (errorCount < 4 && thisApiPath && request.session.accessToken.access_token) {
-        console.log("[API] GET " + thisApiPath);
+        console.log("GET " + thisApiPath);
     
         try {
             const response = await axios.get(thisApiPath, {
                 headers: {
-                "User-Agent": "Chalmers/Azure/Request",
-                "Authorization": request.session.accessToken.token_type + " " + request.session.accessToken.access_token
+                    "User-Agent": "Chalmers/Azure/Request",
+                    "Authorization": request.session.accessToken.token_type + " " + request.session.accessToken.access_token
                 }
             });
 
@@ -46,13 +47,13 @@ async function getCourseGroups(courseId, request) {
         }
         catch (error) {
             errorCount++;
-            console.error("[API] Error: " + error);
+            console.error(error);
         
             if (error.response.status == 401 && error.response.headers['www-authenticate']) { // refresh token, then try again
                 await oauth.providerRefreshToken(request);
             }
             else if (error.response.status == 401 && !error.response.headers['www-authenticate']) { // no access, redirect to auth
-                console.error("[API] Not authorized in Canvas for use of this API endpoint.");
+                console.error("Not authorized in Canvas for use of this API endpoint.");
                 console.error(JSON.stringify(error));
                 return(error);
             }
@@ -63,20 +64,13 @@ async function getCourseGroups(courseId, request) {
         }
     }
 
-    /* console.log("apiData:" + JSON.stringify(apiData));
-    console.log("apiData.typeof: " + typeof(apiData)); */
-
-    console.log(typeof(apiData));
-
     // Compile new object from all pages.
-    // TODO: Include errorCount here in some way for GUI.
     apiData.forEach((page) => {
         page.forEach((record) => {
             returnedApiData.push({
                 id: record.id, 
                 name: record.name, 
-                group_category_id: 
-                record.group_category_id, 
+                group_category_id: record.group_category_id, 
                 created_at: record.created_at, 
                 members_count: record.members_count
             });
@@ -89,14 +83,6 @@ async function getCourseGroups(courseId, request) {
     })
 };
 
-async function getCourseDetails(courseId) {
-    console.log("Course details for " + courseId);
-
-
-    return;
-}
-
 module.exports = {
-    getCourseGroups,
-    getCourseDetails
+    getCourseGroups
 }
