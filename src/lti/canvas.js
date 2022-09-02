@@ -7,11 +7,9 @@ const nodeCacheNonceStore = require('../node-cache-nonce');
 const myCache = new NodeCache();
 const nonceStore = new nodeCacheNonceStore(myCache);
 
-/* LTI Consumer Keys and Secrets go into Azure Configuration Key "ltiConsumerKeys", */
-/* with format "consumer:secret[,consumer2:secret2]".                               */
-
+/* LTI Consumer Keys and Secrets with format "consumer:secret[,consumer2:secret2]". */
 const consumerKeys = process.env.LTI_KEYS;
-const debugLogging = process.env.debugLogging == "true" ? true : false;
+
 var secrets = [];
 
 const getSecret = (consumerKey, callback) => {
@@ -39,7 +37,7 @@ const getSecret = (consumerKey, callback) => {
 };
 
 exports.handleLaunch = (page) => function(req, res) {
-    console.log("[HandleLaunch] Target page: " + page);
+    console.log("LTI Launch start.");
 
     if (!req.body) {
         console.error("No request body.");
@@ -59,17 +57,11 @@ exports.handleLaunch = (page) => function(req, res) {
             console.error(err);
         }
 
-        console.log("Calling lti.Provider...");
         const provider = new lti.Provider(consumerKey, consumerSecret);
 
         console.log(provider);
 
-        console.log("Checking valid_request...");
-
         provider.valid_request(req, async(err, isValid) => {
-            console.log("Inside valid_request...");
-            console.log(provider);
-
             if (err) {
                 console.error(err);
             }
@@ -77,11 +69,10 @@ exports.handleLaunch = (page) => function(req, res) {
                 console.log("Request is valid, LTI Data:" + JSON.stringify(provider.body));
 
                 if (req.session) {
-                    console.log("Setting session lti part.");
                     req.session.lti = provider.body;                    
                 }
                 else {
-
+                    console.error("No session!");
                 }
 
                 return res.redirect("/");
@@ -92,10 +83,8 @@ exports.handleLaunch = (page) => function(req, res) {
                 return res.status(500).json('LTI request is not valid.')
             }
         });
-        
-        console.log("This is the end of getSecret.");
     });
 
-    console.log("This is the end of handleLaunch.");
+    console.log("LTI Launch done.");
 }
 
