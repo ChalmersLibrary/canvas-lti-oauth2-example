@@ -81,26 +81,41 @@ app.get('/', async (req, res) => {
     console.log(token);
 
     if (token.success === false) {
-        console.log("Redirect...");
+        console.log("Redirect to auth flow...");
 
         return res.redirect("/auth");
     }
     else {
-        console.log("Success, send JSON response to client!");
+        console.log("Access token ok, send response to client.");
 
-        await canvasApi.getCourseGroups(req.session.lti.custom_canvas_course_id, req).then((courseGroups) => {
+        if (req.session.lti) {
+            let courseId = req.session.lti.custom_canvas_course_id ? req.session.lti.custom_canvas_course_id : "lti_context_id:" + req.session.lti.context_id;
+
+            await canvasApi.getCourseGroups(courseId, req).then((courseGroups) => {
+                return res.send({
+                    status: 'up',
+                    id: req.session.id,
+                    version: pkg.version,
+                    session: req.session,
+                    groups: courseGroups
+                });    
+            }).catch((error) => {
+                console.error(error);
+    
+                return res.error(error);
+            });    
+        }
+        else {
             return res.send({
                 status: 'up',
                 id: req.session.id,
                 version: pkg.version,
-                groups: courseGroups,
-                session: req.session
-            });    
-        }).catch((error) => {
-            console.error(error);
-
-            return res.error(error);
-        });
+                groups: {
+                    error: true,
+                    message: "This app must be launched at endpoint /lti to get the context from Canvas."
+                }
+            });
+        }
     }
 });
 

@@ -7,9 +7,10 @@ const oauth = require('../auth/oauth2');
 
 const API_PER_PAGE = 25;
 const API_PATH = "/api/v1";
+const API_HOST = process.env.API_HOST ? process.env.API_HOST : process.env.AUTH_HOST;
 
 async function getCourseGroups(courseId, request) {
-    let thisApiPath = (process.env.API_HOST ? process.env.API_HOST : request.session.lti.custom_canvas_api_domain) + API_PATH + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
+    let thisApiPath = (process.env.API_HOST ? process.env.API_HOST : "https://" + request.session.lti.custom_canvas_api_domain) + API_PATH + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
     let apiData = new Array();
     let returnedApiData = new Array();
     let errorCount = 0;
