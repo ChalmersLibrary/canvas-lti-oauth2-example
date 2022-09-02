@@ -43,10 +43,22 @@ app.use(helmet({
 }));
 app.use(cors());
 
+// Content Security Policy
+app.use(function (req, res, next) {
+    res.setHeader(
+      'Content-Security-Policy', 
+      "default-src 'self'; script-src 'self'; style-src 'self'; font-src 'self'; img-src 'self'; frame-src 'self'" 
+      + process.env.CSP_FRAME_SRC_ALLOW ? " " + process.env.CSP_FRAME_SRC_ALLOW : "";
+    );
+    
+    next();
+});
+
 if (process.env.NODE_ENV === "production") {
     app.set('trust proxy', 1);
     sessionOptions.cookie.secure = 'true';
     sessionOptions.cookie.sameSite = 'none'; 
+    sessionOptions.cookie.httpOnly = false;
 }
 
 app.use(session(sessionOptions));
