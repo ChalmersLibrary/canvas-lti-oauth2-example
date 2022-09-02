@@ -57,7 +57,7 @@ exports.handleLaunch = (page) => function(req, res) {
             console.error(err);
         }
 
-        const provider = new lti.Provider(consumerKey, consumerSecret);
+        const provider = new lti.Provider(consumerKey, consumerSecret); // Include nonceStore for custom store, default memory store
 
         console.log(provider);
 
@@ -68,14 +68,16 @@ exports.handleLaunch = (page) => function(req, res) {
             if (isValid) {
                 console.log("Request is valid, LTI Data:" + JSON.stringify(provider.body));
 
-                if (req.session) {
-                    req.session.lti = provider.body;                    
-                }
-                else {
-                    console.error("No session!");
-                }
+                req.session.lti = provider.body;
+                req.session.save(function(err) {
+                    if (err) {
+                        console.error(err);
+                    }
 
-                return res.redirect("/");
+                    console.log("Session saved, redirecting.");
+                    
+                    return res.redirect("/");
+                });
             }
             else {
                 console.error("The request is NOT valid.");
