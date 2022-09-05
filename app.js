@@ -18,8 +18,8 @@ const fileStoreOptions = { ttl: 3600 * 12, retries: 3 };
 
 const sessionOptions = { 
     store: new fileStore(fileStoreOptions),
-    name: "LTI_TEST_SID",
-    secret: "keyboard cat dog mouse",
+    name: process.env.SESSION_NAME ? process.env.SESSION_NAME : "LTI_TEST_SID",
+    secret: process.env.SESSION_SECRET ? process.env.SESSION_SECRET : "keyboard cat dog mouse",
     resave: false,
     saveUninitialized: false,
     rolling: true,
