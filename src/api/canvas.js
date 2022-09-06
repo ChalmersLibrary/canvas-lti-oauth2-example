@@ -8,12 +8,17 @@ const oauth = require('../auth/oauth2');
 const API_PER_PAGE = 25;
 const API_PATH = "/api/v1";
 const API_HOST = process.env.API_HOST ? process.env.API_HOST : process.env.AUTH_HOST;
+const API_GROUPS_ONLY_OWN_GROUPS = true;
 
 async function getCourseGroups(courseId, request) {
     let thisApiPath = (process.env.API_HOST ? process.env.API_HOST : "https://" + request.session.lti.custom_canvas_api_domain) + API_PATH + "/courses/" + courseId + "/groups?per_page=" + API_PER_PAGE;
     let apiData = new Array();
     let returnedApiData = new Array();
     let errorCount = 0;
+
+    if (API_GROUPS_ONLY_OWN_GROUPS) {
+        thisApiPath = thisApiPath + "&only_own_groups=true";
+    }
 
     while (errorCount < 4 && thisApiPath && request.session.accessToken.access_token) {
         console.log("GET " + thisApiPath);
@@ -68,14 +73,18 @@ async function getCourseGroups(courseId, request) {
     // Compile new object from all pages.
     apiData.forEach((page) => {
         page.forEach((record) => {
-            returnedApiData.push({
-                id: record.id, 
-                name: record.name, 
-                group_category_id: record.group_category_id, 
-                created_at: record.created_at, 
-                members_count: record.members_count
-            });
-            // returnedApiData.push(record);
+            if (API_GROUPS_ONLY_OWN_GROUPS) {
+                returnedApiData.push(record);
+            }
+            else {
+                returnedApiData.push({
+                    id: record.id, 
+                    name: record.name, 
+                    group_category_id: record.group_category_id, 
+                    created_at: record.created_at, 
+                    members_count: record.members_count
+                });
+            }
         });
     });
 
